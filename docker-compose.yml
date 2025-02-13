@@ -1,0 +1,94 @@
+services:
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    env_file:
+      - .env.development
+      - ./services/auth-service/.env
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/auth
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./services/auth-service:/usr/src/app
+    networks:
+      - app-network
+    depends_on:
+      - mongodb
+
+  order-service:
+    build:
+      context: ./services/order-service
+      dockerfile: Dockerfile
+    container_name: order-service
+    env_file:
+      - .env.development
+      - ./services/order-service/.env
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/orders
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./services/order-service:/usr/src/app
+    networks:
+      - app-network
+    depends_on:
+      - mongodb
+
+  product-service:
+    build:
+      context: ./services/product-service
+      dockerfile: Dockerfile
+    container_name: product-service
+    env_file:
+      - .env.development
+      - ./services/product-service/.env
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/ecommerce
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./services/product-service:/usr/src/app
+    networks:
+      - app-network
+    depends_on:
+      - mongodb
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    env_file:
+      - ./frontend/.env
+      - .env.development
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/src/app
+    networks:
+      - app-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
