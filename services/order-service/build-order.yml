@@ -1,0 +1,51 @@
+stages:
+  - build
+  - test
+  - scan
+  - push
+
+variables:
+  IMAGE_NAME: "$CI_REGISTRY_IMAGE/order-service"
+  IMAGE_FULL: "$IMAGE_NAME:$IMAGE_TAG"
+
+services:
+  - docker:dind
+
+before_script:
+  - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" $CI_REGISTRY --password-stdin
+
+build:
+  stage: build
+  script:
+    - echo "Building order-service image..."
+    # Si ce fichier est placé dans services/order-service, le contexte est "."
+    - docker build -t $IMAGE_FULL .
+  only:
+    - branches
+
+test:
+  stage: test
+  script:
+    - echo "Running tests for order-service..."
+    # Utilisation d'un container Node qui monte le dossier du service depuis le dépôt,
+    # effectue une installation complète (avec devDependencies) et lance les tests.
+    - docker run --rm -v $CI_PROJECT_DIR/services/order-service:/usr/src/app -w /usr/src/app node:16-alpine sh -c "npm install && npm run test"
+  only:
+    - branches
+
+scan:
+  stage: scan
+  image: aquasec/trivy:latest
+  script:
+    - echo "Scanning order-service image for vulnerabilities..."
+    - trivy image --exit-code 1 --severity HIGH,CRITICAL --no-progress $IMAGE_FULL
+  only:
+    - branches
+
+push:
+  stage: push
+  script:
+    - echo "Pushing order-service image..."
+    - docker push $IMAGE_FULL
+  only:
+    - branches

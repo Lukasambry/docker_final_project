@@ -24,6 +24,32 @@ services:
     networks:
       - app-network
 
+  order-service:
+    image: myregistry/order-service:latest
+    # build:
+    #   context: ./order-service
+    #   dockerfile: Dockerfile
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/orders
+      NODE_ENV: production
+    ports:
+      - target: 3002
+        published: 3002
+        protocol: tcp
+        mode: host
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+    secrets:
+      - source: jwt_secret
+        target: JWT_SECRET
+    networks:
+      - app-network
+
   mongodb:
     image: mongo:latest
     volumes:
