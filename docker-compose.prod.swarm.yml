@@ -1,0 +1,54 @@
+services:
+  frontend:
+    image: myregistry/frontend:latest
+    # build:
+    #   context: ./frontend
+    #   dockerfile: Dockerfile
+    environment:
+      VITE_PRODUCT_SERVICE_URL: http://product-service:3000
+      VITE_AUTH_SERVICE_URL: http://auth-service:3001
+      VITE_ORDER_SERVICE_URL: http://order-service:3002
+      NODE_ENV: production
+    ports:
+      - target: 80
+        published: 8080
+        protocol: tcp
+        mode: host
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+    networks:
+      - app-network
+
+  mongodb:
+    image: mongo:latest
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - target: 27017
+        published: 27017
+        protocol: tcp
+        mode: host
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: overlay
+
+volumes:
+  mongo-data:
+
+secrets:
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
