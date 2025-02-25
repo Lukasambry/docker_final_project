@@ -25,7 +25,6 @@ build:
 test:
   stage: test
   script:
-    - echo "Running tests for frontend..."
     - docker run --rm -e NODE_ENV=test $IMAGE_FULL npm run test
   only:
     - branches
@@ -34,7 +33,6 @@ scan:
   stage: scan
   image: aquasec/trivy:latest
   script:
-    - echo "Scanning frontend image for vulnerabilities..."
     - trivy image --exit-code 1 --severity HIGH,CRITICAL --no-progress $IMAGE_FULL
   only:
     - branches
@@ -42,7 +40,6 @@ scan:
 push:
   stage: push
   script:
-    - echo "Pushing frontend image..."
     - docker push $IMAGE_FULL
   only:
     - branches
