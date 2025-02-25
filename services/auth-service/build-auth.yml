@@ -1,0 +1,44 @@
+stages:
+  - build
+  - test
+  - scan
+  - push
+
+variables:
+  IMAGE_NAME: "$CI_REGISTRY_IMAGE/auth-service"
+  IMAGE_FULL: "$IMAGE_NAME:$IMAGE_TAG"
+
+services:
+  - docker:dind
+
+before_script:
+  - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" $CI_REGISTRY --password-stdin
+
+build:
+  stage: build
+  script:
+    - docker build -t $IMAGE_FULL .
+  only:
+    - branches
+
+test:
+  stage: test
+  script:
+    - docker run --rm -e NODE_ENV=test $IMAGE_FULL npm run test
+  only:
+    - branches
+
+scan:
+  stage: scan
+  image: aquasec/trivy:latest
+  script:
+    - trivy image --exit-code 1 --severity HIGH,CRITICAL --no-progress $IMAGE_FULL
+  only:
+    - branches
+
+push:
+  stage: push
+  script:
+    - docker push $IMAGE_FULL
+  only:
+    - branches

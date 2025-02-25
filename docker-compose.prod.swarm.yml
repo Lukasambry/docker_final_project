@@ -1,4 +1,32 @@
 services:
+  auth-service:
+    image: myregistry/auth-service:latest
+    # Si vous souhaitez conserver des indications de build pour des tests locaux, vous pouvez les laisser en commentaire.
+    # build:
+    #   context: ./auth-service
+    #   dockerfile: Dockerfile
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/auth
+      NODE_ENV: production
+      # La variable JWT_SECRET sera injectée via le secret Docker Swarm
+    ports:
+      - target: 3001
+        published: 3001
+        protocol: tcp
+        mode: host
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+    secrets:
+      - source: jwt_secret
+        target: JWT_SECRET
+    networks:
+      - app-network
+      
   frontend:
     image: myregistry/frontend:latest
     # build:

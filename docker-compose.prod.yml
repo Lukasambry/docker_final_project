@@ -1,4 +1,21 @@
 services:
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: auth-service
+    env_file:
+      - .env.production
+      - ./services/auth-service/.env.production
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/auth
+    ports:
+      - "3001:3001"
+    networks:
+      - app-network
+      
   frontend:
     build:
       context: ./frontend
