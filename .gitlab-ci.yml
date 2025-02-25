@@ -1,0 +1,32 @@
+stages:
+  - build
+  - test
+  - scan
+  - push
+  - deploy
+
+variables:
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+
+include:
+  - local: 'services/auth-service/build-auth.yml'
+  - local: 'services/order-service/build-order.yml'
+  - local: 'services/product-service/build-product.yml'
+  - local: 'frontend/build-front.yml'
+
+services:
+  - docker:dind
+
+before_script:
+  - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" $CI_REGISTRY --password-stdin
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying application using Docker Swarm..."
+    - docker stack deploy -c docker-compose.prod.yml ecommerce_stack
+  when: manual
+  environment:
+    name: production
