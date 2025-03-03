@@ -8,30 +8,12 @@ services:
       - .env.development
       - ./services/auth-service/.env
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017/auth
+      - MONGODB_URI=mongodb://myUsername:myPassword@mongodb:27017/auth?authSource=admin
+      - JWT_SECRET=efrei_super_pass
     ports:
       - "3001:3001"
     volumes:
-      - ./services/auth-service:/usr/src/app
-    networks:
-      - app-network
-    depends_on:
-      - mongodb
-
-  order-service:
-    build:
-      context: ./services/order-service
-      dockerfile: Dockerfile
-    container_name: order-service
-    env_file:
-      - .env.development
-      - ./services/order-service/.env
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017/orders
-    ports:
-      - "3002:3002"
-    volumes:
-      - ./services/order-service:/usr/src/app
+      - ./services/auth-service:/app
     networks:
       - app-network
     depends_on:
@@ -42,38 +24,69 @@ services:
       context: ./services/product-service
       dockerfile: Dockerfile
     container_name: product-service
-    env_file:
-      - .env.development
-      - ./services/product-service/.env
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017/ecommerce
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGODB_URI=mongodb://myUsername:myPassword@mongodb:27017/ecommerce?authSource=admin
+      - JWT_SECRET=efrei_super_pass
     ports:
       - "3000:3000"
     volumes:
-      - ./services/product-service:/usr/src/app
+      - ./services/product-service:/app
     networks:
       - app-network
     depends_on:
       - mongodb
+
+  order-service:
+    build:
+      context: ./services/order-service
+      dockerfile: Dockerfile
+    container_name: order-service
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - MONGODB_URI=mongodb://myUsername:myPassword@mongodb:27017/orders?authSource=admin
+      - JWT_SECRET=efrei_super_pass
+      - VITE_PRODUCT_SERVICE_URL=http://product-service:3000
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./services/order-service:/app
+    networks:
+      - app-network
+    depends_on:
+      - mongodb
+      - product-service
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend
-    env_file:
-      - ./frontend/.env
-      - .env.development
+    environment:
+      - NODE_ENV=development
+      - VITE_PRODUCT_SERVICE_URL=http://product-service:3000
+      - VITE_AUTH_SERVICE_URL=http://auth-service:3001
+      - VITE_ORDER_SERVICE_URL=http://order-service:3002
+    depends_on:
+      - product-service
+      - auth-service
+      - order-service
     ports:
       - "8080:80"
     volumes:
-      - ./frontend:/usr/src/app
+      - ./frontend:/app
     networks:
       - app-network
 
   mongodb:
     image: mongo:latest
     container_name: mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: myUsername
+      MONGO_INITDB_ROOT_PASSWORD: myPassword
+      MONGO_INITDB_DATABASE: ecommerce
     ports:
       - "27017:27017"
     volumes:

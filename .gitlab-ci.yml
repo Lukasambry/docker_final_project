@@ -25,7 +25,6 @@ before_script:
 deploy:
   stage: deploy
   script:
-    - echo "Deploying application using Docker Swarm..."
     - docker stack deploy -c docker-compose.prod.yml ecommerce_stack
   when: manual
   environment:
