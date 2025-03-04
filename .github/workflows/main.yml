@@ -1,0 +1,143 @@
+name: CI/CD Pipeline for All Services
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  auth:
+    name: Auth Service
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged
+        ports:
+          - 2375:2375
+    env:
+      IMAGE_TAG: ${{ github.sha }}
+      IMAGE_NAME: ${{ secrets.CI_REGISTRY_IMAGE }}/auth-service
+      IMAGE_FULL: ${{ secrets.CI_REGISTRY_IMAGE }}/auth-service:${{ github.sha }}
+      DOCKER_HOST: tcp://localhost:2375
+      DOCKER_DRIVER: overlay2
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Docker login
+        run: echo "${{ secrets.CI_REGISTRY_PASSWORD }}" | docker login -u "${{ secrets.CI_REGISTRY_USER }}" "${{ secrets.CI_REGISTRY }}"
+
+      - name: Build Auth Service
+        run: docker build -t $IMAGE_FULL ./services/auth-service
+
+      - name: Test Auth Service
+        run: docker run --rm -e NODE_ENV=test $IMAGE_FULL npm run test
+
+      - name: Push Auth Service Image
+        run: docker push $IMAGE_FULL
+
+  order:
+    name: Order Service
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged
+        ports:
+          - 2375:2375
+    env:
+      IMAGE_TAG: ${{ github.sha }}
+      IMAGE_NAME: ${{ secrets.CI_REGISTRY_IMAGE }}/order-service
+      IMAGE_FULL: ${{ secrets.CI_REGISTRY_IMAGE }}/order-service:${{ github.sha }}
+      DOCKER_HOST: tcp://localhost:2375
+      DOCKER_DRIVER: overlay2
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Docker login
+        run: echo "${{ secrets.CI_REGISTRY_PASSWORD }}" | docker login -u "${{ secrets.CI_REGISTRY_USER }}" "${{ secrets.CI_REGISTRY }}"
+
+      - name: Build Order Service
+        run: docker build -t $IMAGE_FULL ./services/order-service
+
+      - name: Test Order Service
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/services/order-service:/usr/src/app \
+            -w /usr/src/app \
+            node:16-alpine \
+            sh -c "npm install && npm run test"
+
+      - name: Push Order Service Image
+        run: docker push $IMAGE_FULL
+
+  product:
+    name: Product Service
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged
+        ports:
+          - 2375:2375
+    env:
+      IMAGE_TAG: ${{ github.sha }}
+      IMAGE_NAME: ${{ secrets.CI_REGISTRY_IMAGE }}/product-service
+      IMAGE_FULL: ${{ secrets.CI_REGISTRY_IMAGE }}/product-service:${{ github.sha }}
+      DOCKER_HOST: tcp://localhost:2375
+      DOCKER_DRIVER: overlay2
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Docker login
+        run: echo "${{ secrets.CI_REGISTRY_PASSWORD }}" | docker login -u "${{ secrets.CI_REGISTRY_USER }}" "${{ secrets.CI_REGISTRY }}"
+
+      - name: Build Product Service
+        run: docker build -t $IMAGE_FULL ./services/product-service
+
+      - name: Test Product Service
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/services/product-service:/usr/src/app \
+            -w /usr/src/app \
+            node:16-alpine \
+            sh -c "npm install && npm run test"
+      
+      - name: Push Product Service Image
+        run: docker push $IMAGE_FULL
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged
+        ports:
+          - 2375:2375
+    env:
+      IMAGE_TAG: ${{ github.sha }}
+      IMAGE_NAME: ${{ secrets.CI_REGISTRY_IMAGE }}/frontend
+      IMAGE_FULL: ${{ secrets.CI_REGISTRY_IMAGE }}/frontend:${{ github.sha }}
+      DOCKER_HOST: tcp://localhost:2375
+      DOCKER_DRIVER: overlay2
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Docker login
+        run: echo "${{ secrets.CI_REGISTRY_PASSWORD }}" | docker login -u "${{ secrets.CI_REGISTRY_USER }}" "${{ secrets.CI_REGISTRY }}"
+
+      - name: Build Frontend
+        run: |
+          echo "Building frontend image..."
+          docker build -t $IMAGE_FULL ./frontend
+
+      - name: Test Frontend
+        run: docker run --rm -e NODE_ENV=test $IMAGE_FULL npm run test
+      
+      - name: Push Frontend Image
+        run: docker push $IMAGE_FULL
