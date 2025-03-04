@@ -1,0 +1,137 @@
+services:
+  auth-service:
+    image: myregistry/auth-service:latest
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/auth
+      NODE_ENV: production
+    ports:
+      - target: 3001
+        published: 3001
+        protocol: tcp
+        mode: host
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+    secrets:
+      - source: jwt_secret
+        target: JWT_SECRET
+    networks:
+      - app-network
+
+  order-service:
+    image: myregistry/order-service:latest
+    build:
+      context: ./services/order-service
+      dockerfile: Dockerfile
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/orders
+      NODE_ENV: production
+      VITE_PRODUCT_SERVICE_URL: http://product-service:3000
+    ports:
+      - target: 3002
+        published: 3002
+        protocol: tcp
+        mode: host
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+    secrets:
+      - source: jwt_secret
+        target: JWT_SECRET
+    networks:
+      - app-network
+
+  product-service:
+    image: myregistry/product-service:latest
+    build:
+      context: ./services/product-service
+      dockerfile: Dockerfile
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/ecommerce
+      NODE_ENV: production
+    ports:
+      - target: 3000
+        published: 3000
+        protocol: tcp
+        mode: host
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+    secrets:
+      - source: jwt_secret
+        target: JWT_SECRET
+    networks:
+      - app-network
+
+  frontend:
+    image: myregistry/frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      VITE_PRODUCT_SERVICE_URL: http://product-service:3000
+      VITE_AUTH_SERVICE_URL: http://auth-service:3001
+      VITE_ORDER_SERVICE_URL: http://order-service:3002
+      NODE_ENV: production
+    ports:
+      - target: 80
+        published: 8080
+        protocol: tcp
+        mode: host
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+    networks:
+      - app-network
+
+  mongodb:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: myUsername
+      MONGO_INITDB_ROOT_PASSWORD: myPassword
+      MONGO_INITDB_DATABASE: ecommerce
+    ports:
+      - target: 27017
+        published: 27017
+        protocol: tcp
+        mode: host
+    volumes:
+      - mongo-data:/data/db
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: overlay
+
+volumes:
+  mongo-data:
+
+secrets:
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
