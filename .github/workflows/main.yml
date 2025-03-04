@@ -17,16 +17,13 @@ jobs:
           - 2375:2375
     env:
       IMAGE_TAG: ${{ github.sha }}
-      IMAGE_NAME: ${{ secrets.CI_REGISTRY_IMAGE }}/auth-service
-      IMAGE_FULL: ${{ secrets.CI_REGISTRY_IMAGE }}/auth-service:${{ github.sha }}
+      IMAGE_NAME: e-commerce/auth-service
+      IMAGE_FULL: e-commerce/auth-service:${{ github.sha }}
       DOCKER_HOST: tcp://localhost:2375
       DOCKER_DRIVER: overlay2
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Docker login
-        run: echo "${{ secrets.CI_REGISTRY_PASSWORD }}" | docker login -u "${{ secrets.CI_REGISTRY_USER }}" "${{ secrets.CI_REGISTRY }}"
 
       - name: Build Auth Service
         run: docker build -t $IMAGE_FULL ./services/auth-service
@@ -48,16 +45,13 @@ jobs:
           - 2375:2375
     env:
       IMAGE_TAG: ${{ github.sha }}
-      IMAGE_NAME: ${{ secrets.CI_REGISTRY_IMAGE }}/order-service
-      IMAGE_FULL: ${{ secrets.CI_REGISTRY_IMAGE }}/order-service:${{ github.sha }}
+      IMAGE_NAME: e-commerce/order-service
+      IMAGE_FULL: e-commerce/order-service:${{ github.sha }}
       DOCKER_HOST: tcp://localhost:2375
       DOCKER_DRIVER: overlay2
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Docker login
-        run: echo "${{ secrets.CI_REGISTRY_PASSWORD }}" | docker login -u "${{ secrets.CI_REGISTRY_USER }}" "${{ secrets.CI_REGISTRY }}"
 
       - name: Build Order Service
         run: docker build -t $IMAGE_FULL ./services/order-service
@@ -84,16 +78,13 @@ jobs:
           - 2375:2375
     env:
       IMAGE_TAG: ${{ github.sha }}
-      IMAGE_NAME: ${{ secrets.CI_REGISTRY_IMAGE }}/product-service
-      IMAGE_FULL: ${{ secrets.CI_REGISTRY_IMAGE }}/product-service:${{ github.sha }}
+      IMAGE_NAME: e-commerce/product-service
+      IMAGE_FULL: e-commerce/product-service:${{ github.sha }}
       DOCKER_HOST: tcp://localhost:2375
       DOCKER_DRIVER: overlay2
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Docker login
-        run: echo "${{ secrets.CI_REGISTRY_PASSWORD }}" | docker login -u "${{ secrets.CI_REGISTRY_USER }}" "${{ secrets.CI_REGISTRY }}"
 
       - name: Build Product Service
         run: docker build -t $IMAGE_FULL ./services/product-service
@@ -120,16 +111,13 @@ jobs:
           - 2375:2375
     env:
       IMAGE_TAG: ${{ github.sha }}
-      IMAGE_NAME: ${{ secrets.CI_REGISTRY_IMAGE }}/frontend
-      IMAGE_FULL: ${{ secrets.CI_REGISTRY_IMAGE }}/frontend:${{ github.sha }}
+      IMAGE_NAME: e-commerce/frontend
+      IMAGE_FULL: e-commerce/frontend:${{ github.sha }}
       DOCKER_HOST: tcp://localhost:2375
       DOCKER_DRIVER: overlay2
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Docker login
-        run: echo "${{ secrets.CI_REGISTRY_PASSWORD }}" | docker login -u "${{ secrets.CI_REGISTRY_USER }}" "${{ secrets.CI_REGISTRY }}"
 
       - name: Build Frontend
         run: |
